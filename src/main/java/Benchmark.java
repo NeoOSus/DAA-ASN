@@ -17,6 +17,7 @@ public class Benchmark {
     }
 
     public static void main(String[] args) throws Exception {
+        warmup();
         Files.createDirectories(Path.of("results"));
         try (PrintWriter csv = new PrintWriter("results/results.csv")) {
             csv.println("workload,variant,structure,n,time_ms,steps,moves,comparisons");
@@ -44,6 +45,28 @@ public class Benchmark {
             }
         }
         System.out.println("Saved results/results.csv");
+    }
+
+    private static void warmup() {
+        Random random = new Random(42);
+        int[] data = new int[10000];
+        int[] indexes = new int[10000];
+        int[] queries = new int[1000];
+        for (int i = 0; i < data.length; i++) data[i] = random.nextInt(1000000);
+        for (int i = 0; i < indexes.length; i++) indexes[i] = random.nextInt(data.length);
+        for (int i = 0; i < queries.length; i++) {
+            queries[i] = i % 2 == 0 ? data[random.nextInt(data.length)] : -i - 1;
+        }
+        // Compile hot paths before measuring even the smallest input size.
+        for (int i = 0; i < 10; i++) {
+            for (String structure : new String[]{"DynamicArray", "MyLinkedList"}) {
+                run("W1", "-", structure, data, indexes, queries);
+                run("W2", "-", structure, data, indexes, queries);
+                run("W3", "head", structure, data, indexes, queries);
+                run("W3", "middle", structure, data, indexes, queries);
+            }
+            run("W4", "-", "MinHeap", data, indexes, queries);
+        }
     }
 
     private static void measure(PrintWriter csv, String workload, String variant,

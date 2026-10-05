@@ -7,7 +7,8 @@ with (folder / "results.csv").open() as file:
     rows = list(csv.DictReader(file))
 
 for workload in ["W1", "W2", "W3", "W4"]:
-    fig, axes = plt.subplots(1, 4, figsize=(14, 3.3))
+    fig, axes = plt.subplots(2, 2, figsize=(10, 4.8))
+    axes = axes.ravel()
     variants = ["head", "middle"] if workload == "W3" else ["-"]
     structures = ["MinHeap"] if workload == "W4" else ["DynamicArray", "MyLinkedList"]
     for structure in structures:
@@ -23,12 +24,20 @@ for workload in ["W1", "W2", "W3", "W4"]:
                 ax.set_xscale("log")
                 # symlog keeps zero counters visible.
                 ax.set_yscale("symlog", linthresh=0.001 if metric == "time_ms" else 1)
-                ax.set_xlabel("n (elements)")
-                ax.set_ylabel("Time (ms)" if metric == "time_ms" else metric + " (count)")
+                ax.set_xlabel("n (elements)", fontsize=9)
+                ax.set_ylabel("Time (ms)" if metric == "time_ms" else metric + " (count)", fontsize=9)
+                ax.tick_params(labelsize=8)
                 ax.grid(True, alpha=0.3)
     for ax in axes:
-        ax.legend(fontsize=6)
-    fig.suptitle(workload + ": median time and operation counters (log scales; y includes zero)")
+        values = [v for line in ax.lines for v in line.get_ydata()]
+        if min(values) > 0:
+            ax.set_yscale("log")
+        else:
+            ax.set_ylim(bottom=0)
+            if max(values) == 0:
+                ax.set_ylim(0, 1)
+        ax.legend(fontsize=7)
+    fig.suptitle(workload + ": median time and counters (log scales; y includes zero)", fontsize=11)
     fig.tight_layout()
     (folder / "plots").mkdir(exist_ok=True)
     fig.savefig(folder / "plots" / (workload + ".png"), dpi=160)
